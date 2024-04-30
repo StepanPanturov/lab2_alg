@@ -1,0 +1,141 @@
+import time
+
+
+def rectangles_test(n):
+    rectangles = []
+    for i in range(n):
+        rectangles.append([10 * i, 10 * i, 10 * (2 * n - i), 10 * (2 * n - i)])
+    return rectangles
+
+
+def points_test(n):
+    const = 31
+    px, py = 487, 359
+    points = []
+    for i in range(n * 2):
+        x = pow(px * i, const, 20 * n)
+        y = pow(py * i, const, 20 * n)
+        points.append([x, y])
+    return points
+
+
+def coordinate_compression(rectangles):
+    x, y = [], []
+    for i in rectangles:
+        x.append(i[0])
+        y.append(i[1])
+        x.append(i[2])
+        y.append(i[3])
+    compress_x = sorted(set(x))
+    compress_y = sorted(set(y))
+    return compress_x, compress_y
+
+
+def bin_search(coordinates, key):
+    low = 0
+    high = len(coordinates) - 1
+    while low <= high:
+        mid = low + (high - low) // 2
+        if coordinates[mid] == key:
+            return mid
+        elif key > coordinates[mid]:
+            low = mid + 1
+        else:
+            high = mid - 1
+    return low - 1
+
+
+class Node:
+    def __init__(self, count, left_child, right_child, left_index, right_index):
+        self.count = count
+        self.left_child = left_child
+        self.right_child = right_child
+        self.left_index = left_index
+        self.right_index = right_index
+
+
+class SegmentTree:
+    def __init__(self, coord, left, right, value):
+        self.coord = coord
+        self.left = left
+        self.right = right
+        self.value = value
+
+
+def upgrade(node, low, high, status):
+    if node.left_index >= low and node.right_index <= high:
+        return Node(node.count + status, node.left_child, node.right_child, node.left_index, node.right_index)
+    if node.left_index >= high or node.right_index <= low:
+        return node
+    new_node = Node(node.count, node.left_child, node.right_child, node.left_index, node.right_index)
+    new_node.left_child = upgrade(new_node.left_child, low, high, status)
+    new_node.right_child = upgrade(new_node.right_child, low, high, status)
+    return new_node
+
+
+def get_val(node, target):
+    if node is not None:
+        mid = (node.left_index + node.right_index) // 2
+        if mid > target:
+            return node.count + get_val(node.left_child, target)
+        else:
+            return node.count + get_val(node.right_child, target)
+    return 0
+
+
+def build_tree(n, rectangles, compress_y):
+    if not rectangles:
+        return None
+    borders = []
+    for i in rectangles:
+        borders.append(SegmentTree(i[0], i[1], i[3], 1))
+        borders.append(SegmentTree(i[2], i[1], i[3], -1))
+    borders.sort(key=lambda element: element.coord)
+    root = build_recurs(0, n)
+    roots = []
+    coord = borders[0].coord
+    for j in borders:
+        if coord != j.coord:
+            roots.append(root)
+            coord = j.coord
+        y1, y2 = bin_search(compress_y, j.left), bin_search(compress_y, j.right)
+        root = upgrade(root, y1, y2, j.value)
+    roots.append(root)
+    return roots
+
+
+def build_recurs(low, high):
+    if low + 1 == high:
+        return Node(0,None, None,  low, high)
+    mid = (low + high) // 2
+    left = build_recurs(low, mid)
+    right = build_recurs(mid, high)
+    return Node(left.count + right.count, left, right, left.left_index, right.right_index)
+
+
+def main():
+    for i in range(1, 13):
+        cnt = pow(2, i)
+        rectangles = rectangles_test(cnt)
+        print(rectangles)
+        points = points_test(cnt)
+        t_p0 = time.perf_counter()
+        compress_x, compress_y = coordinate_compression(rectangles)
+        n = len(compress_y)
+        roots = build_tree(n, rectangles, compress_y)
+        t_p1 = time.perf_counter()
+        t_s0 = time.perf_counter()
+        for j in points:
+            x, y = bin_search(compress_x, j[0]), bin_search(compress_y, j[1])
+            result = get_val(roots[x], y)
+            #print(result, end=" ")
+            print(str(j[0]) + "," + str(j[1]), ": " + str(result))
+        t_s1 = time.perf_counter()
+        print("\nRectangles:", cnt)
+        print("Preparation: ", (t_p1 - t_p0) * 1000)
+        print("Search: ", (t_s1 - t_s0) * 1000)
+        print("Time: ", (t_s1 - t_p0) * 1000)
+
+
+if __name__ == "__main__":
+    main()
