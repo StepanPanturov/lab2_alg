@@ -1,0 +1,90 @@
+import time
+
+
+def check(x1, y1, x2, y2, x, y):
+    if (x >= x1) and (x < x2) and (y >= y1) and (y < y2):
+        return 1
+    else:
+        return 0
+
+
+def rectangles_test(n):
+    rectangles = []
+    for i in range(n):
+        rectangles.append([10 * i, 10 * i, 10 * (2 * n - i), 10 * (2 * n - i)])
+    return rectangles
+
+
+def points_test(n):
+    const = 31
+    px, py = 487, 359
+    points = []
+    for i in range(n * 2):
+        x = pow(px * i, const, 20 * n)
+        y = pow(py * i, const, 20 * n)
+        points.append([x, y])
+    return points
+
+
+def coordinate_compression(rectangles):
+    x, y = [], []
+    for rect in rectangles:
+        x.append(rect[0])
+        y.append(rect[1])
+        x.append(rect[2])
+        y.append(rect[3])
+    compress_x = sorted(set(x))
+    compress_y = sorted(set(y))
+    return compress_x, compress_y
+
+
+def get_map(rectangles, compress_x, compress_y):
+    n, m = len(compress_y), len(compress_x)
+    mapp = []
+    for i in range(n):
+        mapp.append([0] * m)
+    for i in range(n):
+        for j in range(m):
+            x, y = compress_x[j], compress_y[i]
+            for k in rectangles:
+                mapp[i][j] += check(k[0], k[1], k[2], k[3], x, y)
+    return mapp
+
+
+def bin_search(coordinates, key):
+    low = 0
+    high = len(coordinates) - 1
+    while low <= high:
+        mid = low + (high - low) // 2
+        if coordinates[mid] == key:
+            return mid
+        elif key > coordinates[mid]:
+            low = mid + 1
+        else:
+            high = mid - 1
+    return low - 1
+
+
+def main():
+    for i in range(1, 13):
+        cnt = pow(2, i)
+        rectangles = rectangles_test(cnt)
+        print(rectangles)
+        points = points_test(cnt)
+        t_p0 = time.perf_counter()
+        compress_x, compress_y = coordinate_compression(rectangles)
+        mapp = get_map(rectangles, compress_x, compress_y)
+        t_p1 = time.perf_counter()
+        t_s0 = time.perf_counter()
+        for j in points:
+            x, y = bin_search(compress_x, j[0]), bin_search(compress_y, j[1])
+            print(str(j[0]) + "," + str(j[1]), ": " + str(mapp[y][x]))
+        t_s1 = time.perf_counter()
+        print("Rectangles:", cnt)
+        print("Preparation: ", (t_p1 - t_p0) * 1000)
+        print("Search: ", (t_s1 - t_s0) * 1000)
+        print("Time: ", (t_s1 - t_p0) * 1000)
+
+
+if __name__ == "__main__":
+    main()
