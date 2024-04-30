@@ -1,0 +1,47 @@
+import time
+
+
+def check(x1, y1, x2, y2, x, y):
+    if (x >= x1) and (x < x2) and (y >= y1) and (y < y2):
+        return 1
+    else:
+        return 0
+
+
+def rectangles_test(n):
+    rectangles = []
+    for i in range(n):
+        rectangles.append([10 * i, 10 * i, 10 * (2 * n - i), 10 * (2 * n - i)])
+    return rectangles
+
+
+def points_test(n):
+    const = 31
+    px, py = 487, 359
+    points = []
+    for i in range(n * 2):
+        x = pow(px * i, const, 20 * n)
+        y = pow(py * i, const, 20 * n)
+        points.append([x, y])
+    return points
+
+
+def main():
+    for i in range(1, 13):
+        cnt = pow(2, i)
+        rectangles = rectangles_test(cnt)
+        print(rectangles)
+        points = points_test(cnt)
+        t0 = time.perf_counter()
+        for j in range(len(points)):
+            result = 0
+            for k in range(cnt):
+                result += check(rectangles[k][0], rectangles[k][1], rectangles[k][2], rectangles[k][3], points[j][0], points[j][1])
+            print(str(points[j][0]) + "," + str(points[j][1]) + ": " + str(result))
+        t1 = time.perf_counter()
+        print("Rectangles:", cnt)
+        print("Time:", (t1 - t0) * 1000)
+
+
+if __name__ == "__main__":
+    main()
